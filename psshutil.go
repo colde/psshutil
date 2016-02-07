@@ -8,6 +8,8 @@ import (
   "log"
   "encoding/binary"
   "github.com/nu7hatch/gouuid"
+  "github.com/golang/protobuf/proto"
+  "github.com/colde/psshutil/widevine"
 )
 
 func main() {
@@ -26,6 +28,31 @@ func main() {
   totalSize = fi.Size()
 
   loopAtoms(f, totalSize, 0)
+}
+
+func parseWidevine(f *os.File, size int64) {
+  dataSize, err := readFromFile(f, 4)
+  if err != nil {
+    log.Fatalln(err.Error())
+    return
+  }
+
+  sizeInt := int64(binary.BigEndian.Uint32(dataSize))
+
+  buf, err := readFromFile(f, sizeInt)
+  if err != nil {
+    log.Fatalln(err.Error())
+    return
+  }
+
+  widevineHeader := &widevine.WidevinePsshData{}
+  err = proto.Unmarshal(buf, widevineHeader)
+  if err != nil {
+      log.Fatal("unmarshaling error: ", err)
+  }
+
+  log.Println("Widevine Content Id", string(widevineHeader.GetContentId()))
+  log.Println("Widevine provider Id", string(widevineHeader.GetProvider()))
 }
 
 func parsePssh(f *os.File, box string, size int64) {
@@ -53,6 +80,8 @@ func parsePssh(f *os.File, box string, size int64) {
   switch systemUUID.String() {
   case "edef8ba9-79d6-4ace-a3c8-27dcd51d21ed":
     log.Println("Found Widevine")
+    // Size determined to be size - 8 (box header), 4 (fullbox header), 16 (systemid)
+    parseWidevine(f, size-28)
   case "9a04f079-9840-4286-ab92-e65be0885f95":
     log.Println("Found PlayReady")
   default:
