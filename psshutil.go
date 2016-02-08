@@ -14,9 +14,14 @@ import (
 )
 
 func main() {
+  if len(os.Args) != 2 {
+    log.Println("Usage: psshutil <video.mp4>")
+		os.Exit(0)
+	}
+
 	var totalSize int64
 
-	f, e := os.Open("video.mp4")
+	f, e := os.Open(os.Args[1])
 	if e != nil {
 		log.Fatalf(e.Error())
 	}
