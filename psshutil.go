@@ -8,8 +8,8 @@ import (
   "log"
   "encoding/binary"
   "github.com/nu7hatch/gouuid"
-  "github.com/golang/protobuf/proto"
   "github.com/colde/psshutil/widevine"
+  "github.com/colde/psshutil/fileUtility"
 )
 
 func main() {
@@ -30,42 +30,17 @@ func main() {
   loopAtoms(f, totalSize, 0)
 }
 
-func parseWidevine(f *os.File, size int64) {
-  dataSize, err := readFromFile(f, 4)
-  if err != nil {
-    log.Fatalln(err.Error())
-    return
-  }
-
-  sizeInt := int64(binary.BigEndian.Uint32(dataSize))
-
-  buf, err := readFromFile(f, sizeInt)
-  if err != nil {
-    log.Fatalln(err.Error())
-    return
-  }
-
-  widevineHeader := &widevine.WidevinePsshData{}
-  err = proto.Unmarshal(buf, widevineHeader)
-  if err != nil {
-      log.Fatal("unmarshaling error: ", err)
-  }
-
-  log.Println("Widevine Content Id", string(widevineHeader.GetContentId()))
-  log.Println("Widevine provider Id", string(widevineHeader.GetProvider()))
-}
-
 func parsePssh(f *os.File, box string, size int64) {
   log.Println("Parsing PSSH")
 
   // Full box header
-  _, err := readFromFile(f, 4)
+  _, err := fileUtility.ReadFromFile(f, 4)
   if err != nil {
     log.Fatalln(err.Error())
     return
   }
 
-  systemID, err := readFromFile(f, 16)
+  systemID, err := fileUtility.ReadFromFile(f, 16)
   if err != nil {
     log.Fatalln(err.Error())
     return
@@ -81,7 +56,7 @@ func parsePssh(f *os.File, box string, size int64) {
   case "edef8ba9-79d6-4ace-a3c8-27dcd51d21ed":
     log.Println("Found Widevine")
     // Size determined to be size - 8 (box header), 4 (fullbox header), 16 (systemid)
-    parseWidevine(f, size-28)
+    widevine.ParseWidevine(f, size-28)
   case "9a04f079-9840-4286-ab92-e65be0885f95":
     log.Println("Found PlayReady")
   default:
@@ -93,7 +68,7 @@ func loopAtoms(f *os.File, totalSize int64, offset int64) {
   var pos int64
 
   for totalSize > pos {
-    size, box, err := readHeader(f)
+    size, box, err := fileUtility.ReadHeader(f)
     if err != nil {
       log.Fatalln(err.Error())
     }
@@ -114,27 +89,4 @@ func loopAtoms(f *os.File, totalSize int64, offset int64) {
     }
   }
   return
-}
-
-func readFromFile(f *os.File, size int64) ([]byte,  error) {
-	buf := make([]byte, size)
-	_, err := f.Read(buf)
-
-	if err != nil {
-		log.Fatalln(err.Error())
-		return nil, err
-	}
-
-	return buf, nil
-}
-
-func readHeader(f *os.File)  ([]byte,  []byte,  error){
-  buf, err := readFromFile(f, 8)
-	if err != nil {
-		log.Fatalln(err.Error())
-		return nil, nil, err
-	}
-
-
-	return buf[0:4], buf[4:8], nil
 }
