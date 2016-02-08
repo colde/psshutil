@@ -8,7 +8,7 @@ import (
   "github.com/colde/psshutil/fileUtility"
 )
 
-func ParseWidevine(f *os.File, size int64) {
+func Parse(f *os.File, size int64) {
   dataSize, err := fileUtility.ReadFromFile(f, 4)
   if err != nil {
     log.Fatalln(err.Error())

@@ -9,6 +9,7 @@ import (
   "encoding/binary"
   "github.com/nu7hatch/gouuid"
   "github.com/colde/psshutil/widevine"
+  "github.com/colde/psshutil/playready"
   "github.com/colde/psshutil/fileUtility"
 )
 
@@ -31,7 +32,6 @@ func main() {
 }
 
 func parsePssh(f *os.File, box string, size int64) {
-  log.Println("Parsing PSSH")
 
   // Full box header
   _, err := fileUtility.ReadFromFile(f, 4)
@@ -51,16 +51,17 @@ func parsePssh(f *os.File, box string, size int64) {
     log.Fatalln(err.Error())
     return
   }
-  log.Println("Found SystemID: ", systemUUID)
   switch systemUUID.String() {
   case "edef8ba9-79d6-4ace-a3c8-27dcd51d21ed":
-    log.Println("Found Widevine")
+    log.Println("Found Widevine", systemUUID)
     // Size determined to be size - 8 (box header), 4 (fullbox header), 16 (systemid)
-    widevine.ParseWidevine(f, size-28)
+    widevine.Parse(f, size-28)
   case "9a04f079-9840-4286-ab92-e65be0885f95":
-    log.Println("Found PlayReady")
+    log.Println("Found PlayReady", systemUUID)
+    // Size determined to be size - 8 (box header), 4 (fullbox header), 16 (systemid)
+    playready.Parse(f, size-28)
   default:
-    log.Println("Unable to detect DRM system")
+    log.Println("Found unknown DRM system", systemUUID)
   }
 }
 
