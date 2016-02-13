@@ -1,10 +1,9 @@
-package fileUtility
+package fileHandling
 
 import (
   "os"
   "log"
 )
-
 
 func ReadFromFile(f *os.File, size int64) ([]byte,  error) {
 	buf := make([]byte, size)

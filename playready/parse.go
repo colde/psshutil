@@ -9,7 +9,7 @@ import (
   "encoding/binary"
   "unicode/utf8"
   "unicode/utf16"
-  "github.com/colde/psshutil/fileUtility"
+  "github.com/colde/psshutil/fileHandling"
 )
 
 type WRMHeader struct {
@@ -31,7 +31,7 @@ type ProtectInfo struct {
 }
 
 func Parse(f *os.File, size int64) {
-  dataSize, err := fileUtility.ReadFromFile(f, 4)
+  dataSize, err := fileHandling.ReadFromFile(f, 4)
   if err != nil {
     log.Fatalln(err.Error())
     return
@@ -40,21 +40,21 @@ func Parse(f *os.File, size int64) {
   sizeInt := int64(binary.BigEndian.Uint32(dataSize))
 
   // Read PlayReady Header Length (identical to previous length, but little endian)
-  _, err = fileUtility.ReadFromFile(f, 4)
+  _, err = fileHandling.ReadFromFile(f, 4)
   if err != nil {
     log.Fatalln(err.Error())
     return
   }
 
   // Read record count
-  _, err = fileUtility.ReadFromFile(f, 2)
+  _, err = fileHandling.ReadFromFile(f, 2)
   if err != nil {
     log.Fatalln(err.Error())
     return
   }
 
   // Read rest of data
-  buf, err := fileUtility.ReadFromFile(f, sizeInt - 6)
+  buf, err := fileHandling.ReadFromFile(f, sizeInt - 6)
   if err != nil {
     log.Fatalln(err.Error())
     return

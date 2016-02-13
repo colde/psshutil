@@ -6,22 +6,27 @@ package main
 import (
 	"os"
   "log"
+  "fmt"
+  "flag"
   "encoding/binary"
   "github.com/nu7hatch/gouuid"
   "github.com/colde/psshutil/widevine"
   "github.com/colde/psshutil/playready"
-  "github.com/colde/psshutil/fileUtility"
+  "github.com/colde/psshutil/fileHandling"
 )
 
 func main() {
-  if len(os.Args) != 2 {
-    log.Println("Usage: psshutil <video.mp4>")
-		os.Exit(0)
-	}
+  var fileName = flag.String("i", "", "Input file for reading/parsing")
+  flag.Parse()
+
+  if *fileName == "" {
+    fmt.Println("Usage: psshutil -i <video.mp4>")
+    os.Exit(0)
+  }
 
 	var totalSize int64
 
-	f, e := os.Open(os.Args[1])
+	f, e := os.Open(*fileName)
 	if e != nil {
 		log.Fatalf(e.Error())
 	}
@@ -39,13 +44,13 @@ func main() {
 func parsePssh(f *os.File, box string, size int64) {
 
   // Full box header
-  _, err := fileUtility.ReadFromFile(f, 4)
+  _, err := fileHandling.ReadFromFile(f, 4)
   if err != nil {
     log.Fatalln(err.Error())
     return
   }
 
-  systemID, err := fileUtility.ReadFromFile(f, 16)
+  systemID, err := fileHandling.ReadFromFile(f, 16)
   if err != nil {
     log.Fatalln(err.Error())
     return
@@ -74,7 +79,7 @@ func loopAtoms(f *os.File, totalSize int64, offset int64) {
   var pos int64
 
   for totalSize > pos {
-    size, box, err := fileUtility.ReadHeader(f)
+    size, box, err := fileHandling.ReadHeader(f)
     if err != nil {
       log.Fatalln(err.Error())
     }

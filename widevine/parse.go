@@ -5,11 +5,11 @@ import (
   "log"
   "encoding/binary"
   "github.com/golang/protobuf/proto"
-  "github.com/colde/psshutil/fileUtility"
+  "github.com/colde/psshutil/fileHandling"
 )
 
 func Parse(f *os.File, size int64) {
-  dataSize, err := fileUtility.ReadFromFile(f, 4)
+  dataSize, err := fileHandling.ReadFromFile(f, 4)
   if err != nil {
     log.Fatalln(err.Error())
     return
@@ -17,7 +17,7 @@ func Parse(f *os.File, size int64) {
 
   sizeInt := int64(binary.BigEndian.Uint32(dataSize))
 
-  buf, err := fileUtility.ReadFromFile(f, sizeInt)
+  buf, err := fileHandling.ReadFromFile(f, sizeInt)
   if err != nil {
     log.Fatalln(err.Error())
     return
