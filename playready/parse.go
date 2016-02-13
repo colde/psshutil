@@ -74,8 +74,8 @@ func Parse(f *os.File, size int64) {
     return
   }
 
-  log.Println("PlayReady KID", xmlheader.Data[0].KeyID)
-  log.Println("PlayReady LA_URL", xmlheader.Data[0].LicenseUrl)
+  fmt.Println("PlayReady KID:", xmlheader.Data[0].KeyID)
+  fmt.Println("PlayReady LA_URL:", xmlheader.Data[0].LicenseUrl)
 }
 
 func DecodeUTF16(b []byte) (string, error) {

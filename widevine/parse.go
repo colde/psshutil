@@ -3,6 +3,7 @@ package widevine
 import (
 	"os"
   "log"
+	"fmt"
   "encoding/binary"
   "github.com/golang/protobuf/proto"
   "github.com/colde/psshutil/fileHandling"
@@ -29,6 +30,6 @@ func Parse(f *os.File, size int64) {
       log.Fatal("unmarshaling error: ", err)
   }
 
-  log.Println("Widevine Content Id", string(widevineHeader.GetContentId()))
-  log.Println("Widevine provider Id", string(widevineHeader.GetProvider()))
+  fmt.Println("Widevine Content ID:", string(widevineHeader.GetContentId()))
+  fmt.Println("Widevine provider ID:", string(widevineHeader.GetProvider()))
 }
