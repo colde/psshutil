@@ -2,6 +2,7 @@ package playready
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/binary"
 	"encoding/xml"
 	"fmt"
@@ -74,8 +75,25 @@ func Parse(f *os.File, size int64) {
 		return
 	}
 
-	fmt.Println("PlayReady KID:", xmlheader.Data[0].KeyID)
-	fmt.Println("PlayReady LA_URL:", xmlheader.Data[0].LicenseUrl)
+	for _, data := range xmlheader.Data {
+		key_bytes, _ := base64.StdEncoding.DecodeString(data.KeyID)
+
+		tenc_bytes := make([]byte, 16)
+		tenc_bytes[0] = key_bytes[3]
+		tenc_bytes[1] = key_bytes[2]
+		tenc_bytes[2] = key_bytes[1]
+		tenc_bytes[3] = key_bytes[4]
+		tenc_bytes[4] = key_bytes[3]
+		tenc_bytes[5] = key_bytes[6]
+		tenc_bytes[6] = key_bytes[5]
+		copy(tenc_bytes[7:], key_bytes[7:])
+
+		tenc_keyid := base64.StdEncoding.EncodeToString(tenc_bytes)
+
+		fmt.Println("PlayReady Header/License KID:", data.KeyID)
+		fmt.Println("PlayReady tenc KID:", tenc_keyid)
+		fmt.Println("PlayReady LA_URL:", data.LicenseUrl)
+	}
 }
 
 func DecodeUTF16(b []byte) (string, error) {
