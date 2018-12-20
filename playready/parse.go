@@ -1,81 +1,81 @@
 package playready
 
 import (
-	"os"
-  "log"
-  "fmt"
-  "bytes"
+	"bytes"
+	"encoding/binary"
 	"encoding/xml"
-  "encoding/binary"
-  "unicode/utf8"
-  "unicode/utf16"
-  "github.com/colde/psshutil/fileHandling"
+	"fmt"
+	"github.com/colde/psshutil/fileHandling"
+	"log"
+	"os"
+	"unicode/utf16"
+	"unicode/utf8"
 )
 
 type WRMHeader struct {
-  XMLName xml.Name `xml:"WRMHEADER"`
-  Version string `xml:"version,attr"`
-  Data []Data `xml:"DATA"`
+	XMLName xml.Name `xml:"WRMHEADER"`
+	Version string   `xml:"version,attr"`
+	Data    []Data   `xml:"DATA"`
 }
 type Data struct {
-  XMLName xml.Name `xml:"DATA"`
-  ProtectInfo []ProtectInfo `xml:"PROTECTINFO"`
-  KeyID string `xml:"KID"`
-  Checksum string `xml:"CHECKSUM"`
-  LicenseUrl string `xml:"LA_URL"`
+	XMLName     xml.Name      `xml:"DATA"`
+	ProtectInfo []ProtectInfo `xml:"PROTECTINFO"`
+	KeyID       string        `xml:"KID"`
+	Checksum    string        `xml:"CHECKSUM"`
+	LicenseUrl  string        `xml:"LA_URL"`
 }
 type ProtectInfo struct {
-  XMLName xml.Name `xml:"PROTECTINFO"`
-  KeyLength string `xml:"KEYLEN"`
-  AlgorithmID string `xml:"ALGID"`
+	XMLName     xml.Name `xml:"PROTECTINFO"`
+	KeyLength   string   `xml:"KEYLEN"`
+	AlgorithmID string   `xml:"ALGID"`
 }
 
 func Parse(f *os.File, size int64) {
-  dataSize, err := fileHandling.ReadFromFile(f, 4)
-  if err != nil {
-    log.Fatalln(err.Error())
-    return
-  }
+	dataSize, err := fileHandling.ReadFromFile(f, 4)
+	if err != nil {
+		log.Fatalln(err.Error())
+		return
+	}
 
-  sizeInt := int64(binary.BigEndian.Uint32(dataSize))
+	sizeInt := int64(binary.BigEndian.Uint32(dataSize))
 
-  // Read PlayReady Header Length (identical to previous length, but little endian)
-  _, err = fileHandling.ReadFromFile(f, 4)
-  if err != nil {
-    log.Fatalln(err.Error())
-    return
-  }
+	// Read PlayReady Header Length (identical to previous length, but little endian)
+	_, err = fileHandling.ReadFromFile(f, 4)
+	if err != nil {
+		log.Fatalln(err.Error())
+		return
+	}
 
-  // Read record count
-  _, err = fileHandling.ReadFromFile(f, 2)
-  if err != nil {
-    log.Fatalln(err.Error())
-    return
-  }
+	// Read record count
+	_, err = fileHandling.ReadFromFile(f, 2)
+	if err != nil {
+		log.Fatalln(err.Error())
+		return
+	}
 
-  // Read rest of data
-  buf, err := fileHandling.ReadFromFile(f, sizeInt - 6)
-  if err != nil {
-    log.Fatalln(err.Error())
-    return
-  }
+	// Read rest of data
+	buf, err := fileHandling.ReadFromFile(f, sizeInt-6)
+	if err != nil {
+		log.Fatalln(err.Error())
+		return
+	}
 
-  // Assume just 1 record and slice of the record type and record length
-  header, err := DecodeUTF16(buf[4:])
-  if err != nil {
-    log.Fatalln(err.Error())
-    return
-  }
+	// Assume just 1 record and slice of the record type and record length
+	header, err := DecodeUTF16(buf[4:])
+	if err != nil {
+		log.Fatalln(err.Error())
+		return
+	}
 
-  xmlheader := WRMHeader{}
-  err = xml.Unmarshal([]byte(header), &xmlheader)
-  if err != nil {
-    log.Fatalln(err.Error())
-    return
-  }
+	xmlheader := WRMHeader{}
+	err = xml.Unmarshal([]byte(header), &xmlheader)
+	if err != nil {
+		log.Fatalln(err.Error())
+		return
+	}
 
-  fmt.Println("PlayReady KID:", xmlheader.Data[0].KeyID)
-  fmt.Println("PlayReady LA_URL:", xmlheader.Data[0].LicenseUrl)
+	fmt.Println("PlayReady KID:", xmlheader.Data[0].KeyID)
+	fmt.Println("PlayReady LA_URL:", xmlheader.Data[0].LicenseUrl)
 }
 
 func DecodeUTF16(b []byte) (string, error) {

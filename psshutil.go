@@ -4,25 +4,25 @@ psshutil implements function to manipulate and use pssh boxes in isobmff files
 package main
 
 import (
+	"encoding/binary"
+	"flag"
+	"fmt"
+	"github.com/colde/psshutil/fileHandling"
+	"github.com/colde/psshutil/playready"
+	"github.com/colde/psshutil/widevine"
+	"github.com/nu7hatch/gouuid"
+	"log"
 	"os"
-  "log"
-  "fmt"
-  "flag"
-  "encoding/binary"
-  "github.com/nu7hatch/gouuid"
-  "github.com/colde/psshutil/widevine"
-  "github.com/colde/psshutil/playready"
-  "github.com/colde/psshutil/fileHandling"
 )
 
 func main() {
-  var fileName = flag.String("i", "", "Input file for reading/parsing")
-  flag.Parse()
+	var fileName = flag.String("i", "", "Input file for reading/parsing")
+	flag.Parse()
 
-  if *fileName == "" {
-    fmt.Println("Usage: psshutil -i <video.mp4>")
-    os.Exit(0)
-  }
+	if *fileName == "" {
+		fmt.Println("Usage: psshutil -i <video.mp4>")
+		os.Exit(0)
+	}
 
 	var totalSize int64
 
@@ -32,44 +32,44 @@ func main() {
 	}
 	defer f.Close()
 
-  fi ,err := f.Stat()
-  if err != nil {
+	fi, err := f.Stat()
+	if err != nil {
 		log.Fatalln(err.Error())
 	}
-  totalSize = fi.Size()
+	totalSize = fi.Size()
 
-  loopAtoms(f, totalSize, 0)
+	loopAtoms(f, totalSize, 0)
 }
 
 func parsePssh(f *os.File, box string, size int64) {
 
-  // Full box header
-  _, err := fileHandling.ReadFromFile(f, 4)
-  if err != nil {
-    log.Fatalln(err.Error())
-    return
-  }
+	// Full box header
+	_, err := fileHandling.ReadFromFile(f, 4)
+	if err != nil {
+		log.Fatalln(err.Error())
+		return
+	}
 
-  systemID, err := fileHandling.ReadFromFile(f, 16)
-  if err != nil {
-    log.Fatalln(err.Error())
-    return
-  }
+	systemID, err := fileHandling.ReadFromFile(f, 16)
+	if err != nil {
+		log.Fatalln(err.Error())
+		return
+	}
 
-  systemUUID, err := uuid.Parse(systemID)
-  if err != nil {
-    log.Fatalln(err.Error())
-    return
-  }
-  switch systemUUID.String() {
-  case "edef8ba9-79d6-4ace-a3c8-27dcd51d21ed":
-    fmt.Println("Found Widevine", systemUUID)
-    // Size determined to be size - 8 (box header), 4 (fullbox header), 16 (systemid)
-    widevine.Parse(f, size-28)
-  case "9a04f079-9840-4286-ab92-e65be0885f95":
-    fmt.Println("Found Microsoft PlayReady", systemUUID)
-    // Size determined to be size - 8 (box header), 4 (fullbox header), 16 (systemid)
-    playready.Parse(f, size-28)
+	systemUUID, err := uuid.Parse(systemID)
+	if err != nil {
+		log.Fatalln(err.Error())
+		return
+	}
+	switch systemUUID.String() {
+	case "edef8ba9-79d6-4ace-a3c8-27dcd51d21ed":
+		fmt.Println("Found Widevine", systemUUID)
+		// Size determined to be size - 8 (box header), 4 (fullbox header), 16 (systemid)
+		widevine.Parse(f, size-28)
+	case "9a04f079-9840-4286-ab92-e65be0885f95":
+		fmt.Println("Found Microsoft PlayReady", systemUUID)
+		// Size determined to be size - 8 (box header), 4 (fullbox header), 16 (systemid)
+		playready.Parse(f, size-28)
 	case "f239e769-efa3-4850-9c16-a903c6932efb":
 		fmt.Println("Found Adobe Primetime DRM, version 4", systemUUID)
 	case "5e629af5-38da-4063-8977-97ffbd9902d4":
@@ -94,34 +94,34 @@ func parsePssh(f *os.File, box string, size int64) {
 		fmt.Println("Found Irdeto Content Protection for DASH")
 	case "dcf4e3e3-62f1-5818-7ba6-0a6fe33ff3dd":
 		fmt.Println("Found DigiCAP SmartXess for DASH")
-  default:
-    fmt.Println("Found unknown DRM system", systemUUID)
-  }
+	default:
+		fmt.Println("Found unknown DRM system", systemUUID)
+	}
 	fmt.Println()
 }
 
 func loopAtoms(f *os.File, totalSize int64, offset int64) {
-  var pos int64
+	var pos int64
 
-  for totalSize > pos {
-    size, box, err := fileHandling.ReadHeader(f)
-    if err != nil {
-      log.Fatalln(err.Error())
-    }
+	for totalSize > pos {
+		size, box, err := fileHandling.ReadHeader(f)
+		if err != nil {
+			log.Fatalln(err.Error())
+		}
 
-    sizeInt := int64(binary.BigEndian.Uint32(size))
+		sizeInt := int64(binary.BigEndian.Uint32(size))
 
-    if string(box) == "moov" {
-      loopAtoms(f, sizeInt - 8, pos + 8)
-      pos += sizeInt
-    } else {
-      if string(box) == "pssh" {
-        parsePssh(f, string(box), sizeInt)
-      }
-      pos += sizeInt
-      seek := pos + offset
-      f.Seek(seek, 0)
-    }
-  }
-  return
+		if string(box) == "moov" {
+			loopAtoms(f, sizeInt-8, pos+8)
+			pos += sizeInt
+		} else {
+			if string(box) == "pssh" {
+				parsePssh(f, string(box), sizeInt)
+			}
+			pos += sizeInt
+			seek := pos + offset
+			f.Seek(seek, 0)
+		}
+	}
+	return
 }
