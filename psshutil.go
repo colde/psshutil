@@ -94,6 +94,23 @@ func parsePssh(f *os.File, box string, size int64) {
 		fmt.Println("Found Irdeto Content Protection for DASH")
 	case "dcf4e3e3-62f1-5818-7ba6-0a6fe33ff3dd":
 		fmt.Println("Found DigiCAP SmartXess for DASH")
+	case "45d481cb-8fe0-49c0-ada9-ab2d2455b2f2":
+		fmt.Println("Found CoreCrypt (CoreTrust)")
+	case "616c7469-6361-7374-2d50-726f74656374":
+		fmt.Println("Found Alticast altiProtect")
+	case "992c46e6-c437-4899-b6a0-50fa91ad0e39":
+		fmt.Println("Found SecureMedia SteelKnot")
+	case "1077efec-c0b2-4d02-ace3-3c1e52e2fb4b":
+		// W3C standard: https://w3c.github.io/encrypted-media/format-registry/initdata/cenc.html
+		fmt.Println("Found Common PSSH Box Format")
+	case "e2719d58-a985-b3c9-781a-b030af78d30e":
+		fmt.Println("Found ClearKey signaling (this should not be in the PSSH box)")
+	case "94ce86fb-07ff-4f43-adb8-93d2fa968ca2":
+		fmt.Println("Found Apple FairPlay")
+	case "279fe473-512c-48fe-ade8-d176fee6b40f":
+		fmt.Println("Found Arris Titanium")
+	case "aa11967f-cc01-4a4a-8e99-c5d3dddfea2d":
+		fmt.Println("Found Unitend DRM")
 	default:
 		fmt.Println("Found unknown DRM system", systemUUID)
 	}
